@@ -2,8 +2,9 @@
 
 Examples of how to use **Clojure core.logic**:
 
-- Solve a [puzzle](https://www.janestreet.com/puzzles/hooks-2/), that is a bit more involved than Sudoku
-  Solution: [src/puzzles/hooks.clj](https://github.com/laczoka/core-logic-examples/blob/master/src/puzzles/logic.clj)
+-    Solve a [puzzle](https://www.janestreet.com/puzzles/hooks-2/), that is a bit more involved than Sudoku
+     
+	 Solution: [src/puzzles/hooks.clj](https://github.com/laczoka/core-logic-examples/blob/master/src/puzzles/logic.clj)
 
 
 ## License
