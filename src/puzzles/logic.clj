@@ -212,9 +212,9 @@
 
 (defn run-solver []
   (let [[solution-rows :as solutions] (solve 2 +row-sum+ +col-sum+)]
-    ;(println "Solution:")
+    (println "Solution:")
     ;; solve and check if there is indeed only one solution
-    ;(doseq [s solutions] (print-sq s))    
+    (doseq [s solutions] (print-sq s))    
     ;; Solution: 
     ;; ( 9 0 9 0 0|9|0 9 9 )
     ;; ( 0 0 5 5 5 5 7 8|9|)
@@ -225,10 +225,9 @@
     ;; ( 6 0 6 6|6|6 0 8 9 )
     ;; ( 7 0 7|7|0 7 7 8 0 )
     ;; (|8|0 8 8 0 0 0 0 9 )
-    ;(println)
-    ;(println "Max product:" (find-max (products solution-rows)))
-    ))
+    (println)
+    (println "Max product:" (find-max (products solution-rows)))))
 
 (comment
-  (run-solver)
+  (time (run-solver))
   )
