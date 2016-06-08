@@ -1,4 +1,4 @@
-(ns puzzles.logic
+(ns puzzles.hooks
 "Using core.logic to solve an interesting puzzle
 See the puzzle description here: https://www.janestreet.com/puzzles/hooks-2/ 
 And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-solution/"
