@@ -1,7 +1,13 @@
 (ns puzzles.logic
-"Using core.logic to solve an interesting puzzle
-See the puzzle description here: https://www.janestreet.com/puzzles/hooks-2/ 
-And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-solution/"
+" Using core.logic to solve an interesting puzzle
+  See the puzzle description here: https://www.janestreet.com/puzzles/hooks-2/ 
+  And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-solution/
+
+  Not the most efficient or clever solution, 
+  the emphasis was put on preserving readability and implementing the intuitive approach
+
+  A specialized back-tracking search algo is way-way faster, however way less readable"
+
   (:refer-clojure :exclude [==])
   (:require [clojure.core.logic.fd :as fd]
             [clojure.core.logic :refer :all]))
@@ -18,42 +24,61 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
                 33
                 ])
 
-(defn sumo [vs sum]
-  (fresh [sum' v rest-vs]
-    (conde
-      [(== sum 0) (== vs ())]
-      [(conso v rest-vs vs)
-       (fd/+ v sum' sum)
-       (sumo rest-vs sum')])))
+(set! *warn-on-reflection* true)
+
+ (defn sumo [vs sum]
+     (fresh [sum' v rest-vs]
+       (conde
+        [(== sum 0) (== vs ())]
+        [(conso v rest-vs vs)
+         (fd/+ v sum' sum)
+         (sumo rest-vs sum')])))
+
+(defn- firstv [v]
+  (when-not (empty? v)
+    (v 0)))
+
+(defn- lastv [v]
+  (when-not (empty? v)
+    (v (- (count v) 1))))
+
+(defn- nextv [v]
+  (when-not (< (count v) 2)
+    (subvec v 1)))
+
+(defn- butlastv [v]
+  (when-not (< (count v) 2)
+    (subvec v 0 (- (count v) 1))))
+
 
 (defn se-rows [rows]
-  (map next (next rows)))
+  (mapv nextv (nextv rows)))
 
 (defn se-cols [cols]
-  (map next (next cols)))
+  (mapv nextv (nextv cols)))
 
 (defn sw-rows [rows]
-  (map butlast (next rows)))
+  (mapv butlastv (nextv rows)))
 
 (defn sw-cols [cols]
-  (map next (butlast cols)))
+  (mapv nextv (butlastv cols)))
 
 (defn nw-rows [rows]
-  (map butlast (butlast rows)))
+  (mapv butlastv (butlastv rows)))
 
 (defn nw-cols [cols]
-  (map butlast (butlast cols)))
+  (mapv butlastv (butlastv cols)))
 
 (defn ne-rows [rows]
-  (map next (butlast rows)))
+  (mapv nextv (butlastv rows)))
 
 (defn ne-cols [cols]
-  (map butlast (next cols)))
+  (mapv butlastv (nextv cols)))
 
 (defn hooko [rs cs rows cols]
   (let [l (count rows)
-        rs' (repeatedly (- l 1) lvar)
-        cs' (repeatedly (- l 1) lvar)]
+        rs' (vec (repeatedly (- l 1) lvar))
+        cs' (vec (repeatedly (- l 1) lvar))]
     (conde
      ;; base case
      [(fresh [row col]
@@ -67,19 +92,19 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
      [;; place a NW oriented hook (0's and l number of l's) such that
       ;; constrain the number of l's
       (fresh [rc-sum]
-        (fd/+ (first rs) (first cs) rc-sum)
+        (fd/+ (firstv rs) (firstv cs) rc-sum)
         (fd/in rc-sum (fd/domain (* l l) (* l (+ l 1)))))
       ;; the hook's row adheres to the row sum
-      (everyg #(fd/in % (fd/domain 0 l)) (first rows))
-      (sumo (first rows) (first rs))
+      (everyg #(fd/in % (fd/domain 0 l)) (firstv rows))
+      (sumo (firstv rows) (firstv rs))
       ;; the hook's column adhere to the column sum
-      (everyg #(fd/in % (fd/domain 0 l)) (first cols))
-      (sumo (first cols) (first cs))
+      (everyg #(fd/in % (fd/domain 0 l)) (firstv cols))
+      (sumo (firstv cols) (firstv cs))
       ;; hook's row satisfies column sum constrains
-      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (next (first rows)) (next cs) cs'))
+      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (nextv (firstv rows)) (nextv cs) cs'))
       (everyg #(fd/< 0 %) cs')
       ;; hook's column satisfies row sum constrains
-      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (next (first cols)) (next rs) rs'))
+      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (nextv (firstv cols)) (nextv rs) rs'))
       (everyg #(fd/< 0 %) rs')
       
       (hooko rs' cs' (se-rows rows) (se-cols cols))]
@@ -87,19 +112,19 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
      [;; place a NE oriented hook (0's and l number of l's) such that
       ;; constrain the number of l's
       (fresh [rc-sum]
-        (fd/+ (first rs) (last cs) rc-sum)
+        (fd/+ (firstv rs) (lastv cs) rc-sum)
         (fd/in rc-sum (fd/domain (* l l) (* l (+ l 1)))))
       ;; the hook's row adheres to the row sum
-      (everyg #(fd/in % (fd/domain 0 l)) (first rows))
-      (sumo (first rows) (first rs))
+      (everyg #(fd/in % (fd/domain 0 l)) (firstv rows))
+      (sumo (firstv rows) (firstv rs))
       ;; the hook's column adhere to the column sum
-      (everyg #(fd/in % (fd/domain 0 l)) (last cols))
-      (sumo (last cols) (last cs))
+      (everyg #(fd/in % (fd/domain 0 l)) (lastv cols))
+      (sumo (lastv cols) (lastv cs))
       ;; hook's row satisfies column sum constrains
-      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (butlast (first rows)) (butlast cs) cs'))
+      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (butlastv (firstv rows)) (butlastv cs) cs'))
       (everyg #(fd/< 0 %) cs')
       ;; hook's column satisfies row sum constrains
-      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (next (last cols)) (next rs) rs'))
+      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (nextv (lastv cols)) (nextv rs) rs'))
       (everyg #(fd/< 0 %) rs')
       
       (hooko rs' cs' (sw-rows rows) (sw-cols cols))]
@@ -107,19 +132,19 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
      [;; place a SE oriented hook (0's and l number of l's) such that
       ;; constrain the number of l's
       (fresh [rc-sum]
-        (fd/+ (last rs) (last cs) rc-sum)
+        (fd/+ (lastv rs) (lastv cs) rc-sum)
         (fd/in rc-sum (fd/domain (* l l) (* l (+ l 1)))))
       ;; the hook's row adheres to the row sum
-      (everyg #(fd/in % (fd/domain 0 l)) (last rows))
-      (sumo (last rows) (last rs))
+      (everyg #(fd/in % (fd/domain 0 l)) (lastv rows))
+      (sumo (lastv rows) (lastv rs))
       ;; the hook's column adhere to the column sum
-      (everyg #(fd/in % (fd/domain 0 l)) (last cols))
-      (sumo (last cols) (last cs))
+      (everyg #(fd/in % (fd/domain 0 l)) (lastv cols))
+      (sumo (lastv cols) (lastv cs))
       ;; hook's row satisfies column sum constrains
-      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (butlast (last rows)) (butlast cs) cs'))
+      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (butlastv (lastv rows)) (butlastv cs) cs'))
       (everyg #(fd/< 0 %) cs')
       ;; hook's column satisfies row sum constrains
-      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (butlast (last cols)) (butlast rs) rs'))
+      (everyg (fn [[r s s']] (fd/+ s' r s)) (map vector (butlastv (lastv cols)) (butlastv rs) rs'))
       (everyg #(fd/< 0 %) rs')
       
       (hooko rs' cs' (nw-rows rows) (nw-cols cols))]
@@ -150,8 +175,8 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
         vars (repeatedly (* l l) lvar)
         rows (into [] (map vec) (partition l vars))
         cols (vec (apply map vector rows))
-        rs (repeatedly l lvar)
-        cs (repeatedly l lvar)]
+        rs (vec (repeatedly l lvar))
+        cs (vec (repeatedly l lvar))]
     (if (and (< n 1) (not= l (count cols)))
       (list) ;; -> invalid input     
       ;; else solve
@@ -187,9 +212,9 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
 
 (defn run-solver []
   (let [[solution-rows :as solutions] (solve 2 +row-sum+ +col-sum+)]
-    (println "Solution:")
+    ;(println "Solution:")
     ;; solve and check if there is indeed only one solution
-    (doseq [s solutions] print-sq)    
+    ;(doseq [s solutions] (print-sq s))    
     ;; Solution: 
     ;; ( 9 0 9 0 0|9|0 9 9 )
     ;; ( 0 0 5 5 5 5 7 8|9|)
@@ -200,8 +225,9 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
     ;; ( 6 0 6 6|6|6 0 8 9 )
     ;; ( 7 0 7|7|0 7 7 8 0 )
     ;; (|8|0 8 8 0 0 0 0 9 )
-    (println)
-    (println "Max product:" (find-max (products solution-rows)))))
+    ;(println)
+    ;(println "Max product:" (find-max (products solution-rows)))
+    ))
 
 (comment
   (run-solver)
