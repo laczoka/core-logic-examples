@@ -189,7 +189,7 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
   (let [[solution-rows :as solutions] (solve 2 +row-sum+ +col-sum+)]
     (println "Solution:")
     ;; solve and check if there is indeed only one solution
-    (doseq [s solutions] print-sq)    
+    (doseq [s solutions] (print-sq s))    
     ;; Solution: 
     ;; ( 9 0 9 0 0|9|0 9 9 )
     ;; ( 0 0 5 5 5 5 7 8|9|)
@@ -204,5 +204,5 @@ And the solution here: https://www.janestreet.com/puzzles/solutions/may-2016-sol
     (println "Max product:" (find-max (products solution-rows)))))
 
 (comment
-  (run-solver)
+  (time (run-solver))
   )
